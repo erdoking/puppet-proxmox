@@ -5,7 +5,7 @@
 # @example
 #   include proxmox
 class proxmox (
-  Optional[Integer]              $puppetserver_id     = $proxmox::puppetserver_id,
-  Optional[String]               $puppetserver_name   = $proxmox::puppetserver_name,
+  Integer $puppetserver_id  = $proxmox::puppetserver_id,
+  String $puppetserver_name = $proxmox::puppetserver_name,
 ) inherits proxmox::params {
 }

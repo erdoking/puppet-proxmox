@@ -43,53 +43,53 @@ define proxmox::lxc (
   ## Default Settings
   String[1] $pmx_node,
   String[1] $os_template,
-  Optional[String[1]] $lxc_name              = $title,
-  Optional[Integer] $newid                = Integer($facts['proxmox_cluster_nextid']),
-  Optional[Enum['running', 'stopped', 'present', 'absent']] $state = 'running',
+  String[1] $lxc_name                 = $title,
+  Integer $newid                      = Integer($facts['proxmox_cluster_nextid']),
+  Enum['running', 'stopped'] $state   = 'running',
 
   ## VM Settings
-  Optional[Integer] $cpu_cores              = 1,
-  Optional[Integer] $memory                 = 512,
-  Optional[Integer] $swap                   = 512,
-  Optional[Boolean] $protected              = false,
-  Optional[Boolean] $unprivileged           = true,    ## default of Proxmox
+  Integer $cpu_cores                  = 1,
+  Integer $memory                     = 512,
+  Integer $swap                       = 512,
+  Boolean $protected                  = false,
+  Boolean $unprivileged               = true,    ## default of Proxmox
 
   ## Disk settings and Description
-  # Optional[String]  $disk_size              = undef,
-  Optional[Integer]  $disk_size             = undef,   ## Maybe switch back in the future
-  Optional[String]   $disk_target           = local,
-  # Optional[String]  $description            = undef,
+  # Optional[String]  $disk_size      = undef,
+  Optional[Integer]  $disk_size       = undef,   ## Maybe switch back in the future
+  String $disk_target                 = local,
+  # Optional[String]  $description    = undef,
 
   ## Network Settings
-  Optional[String]  $net_name               = 'eth0',
-  Optional[String]  $net_mac_addr           = undef,
-  Optional[String]  $net_bridge             = undef,
-  Optional[Boolean] $ipv4_static            = false,
-  Optional[String]  $ipv4_static_cidr       = undef, # Needs to be in the format '192.168.1.20/24'
-  Optional[String]  $ipv4_static_gw         = undef, # Needs to be in the format '192.168.1.1'
-  # Optional[String]  $ci_sshkey               = '',    # Commented out; difficulties below.
-  Optional[String] $searchdomain            = undef,
-  Optional[String] $nameserver              = undef,
+  String $net_name                    = 'eth0',
+  Optional[String]  $net_mac_addr     = undef,
+  Optional[String]  $net_bridge       = undef,
+  Boolean $ipv4_static                = false,
+  Optional[String]  $ipv4_static_cidr = undef, # Needs to be in the format '192.168.1.20/24'
+  Optional[String]  $ipv4_static_gw   = undef, # Needs to be in the format '192.168.1.1'
+  # Optional[String]  $ci_sshkey      = '',  # Commented out; difficulties below.
+  Optional[String] $searchdomain      = undef,
+  Optional[String] $nameserver        = undef,
 
   ## Feature Settings
-  Optional[Boolean] $fuse                   = false,
-  Optional[Boolean] $mknod                  = false,
-  Optional[Boolean] $nfs                    = false,
-  Optional[Boolean] $cifs                   = false,
-  Optional[Boolean] $nesting                = false,
-  Optional[Boolean] $keyctl                 = false,
+  Boolean $fuse                       = false,
+  Boolean $mknod                      = false,
+  Boolean $nfs                        = false,
+  Boolean $cifs                       = false,
+  Boolean $nesting                    = false,
+  Boolean $keyctl                     = false,
 
   ## custom script
-  Optional[String] $custom_script           = undef,
- 
+  Optional[String] $custom_script     = undef,
+
   ## puppet master
-  Optional[Integer] $puppetserver_id        = $proxmox::puppetserver_id,
-  Optional[String] $puppetserver_name       = $proxmox::puppetserver_name,
-  Optional[Integer] $puppetversion          = $proxmox::puppetversion,
+  Integer $puppetserver_id            = $proxmox::puppetserver_id,
+  String $puppetserver_name           = $proxmox::puppetserver_name,
+  Integer $puppetversion              = $proxmox::puppetversion,
 
-  Optional[Boolean] $install_puppet_agent   = true,
+  Boolean $install_puppet_agent       = true,
 
-  Optional[Integer] $boot_wait_time         = 10
+  Integer $boot_wait_time             = 10
 ) {
 
   # The base class must be included first because it is used by parameter defaults
@@ -106,20 +106,19 @@ define proxmox::lxc (
   $proxmox_nodes    = parsejson($facts['proxmox_nodes'])
 
   # Generate a list of VMIDS
-  $vmids = $proxmox_qemu.map|$hash|{$hash['vmid']}
+  $vmids = $proxmox_qemu.map|$hash| { $hash['vmid'] }
   # Generate a list of VMIDS
-  $vmnames = $proxmox_qemu.map|$hash|{$hash['name']}
-  
+  $vmnames = $proxmox_qemu.map|$hash| { $hash['name'] }
+
   # Generate a list of all Proxmox Nodes
-  $nodes = $proxmox_qemu.map|$hash|{$hash['node']}
+  $nodes = $proxmox_qemu.map|$hash| { $hash['node'] }
 
   # Generate a list of all storage mediums on the specified node
-  $disk_targets = $proxmox_storage.map|$hash|{
+  $disk_targets = $proxmox_storage.map|$hash| {
     if $hash['node'] == $pmx_node {
       $hash['storage']
     }
   }
-
 
   #################################################
   ### create lxc
@@ -132,7 +131,7 @@ define proxmox::lxc (
     $lxc_create_new = true
     $lxc_vmid = $newid
 
-    proxmox::lxc::create { $lxc_name: 
+    proxmox::lxc::create { $lxc_name:
       pmx_node         => $pmx_node,
       os_template      => $os_template,
       lxc_name         => $lxc_name,
@@ -142,7 +141,7 @@ define proxmox::lxc (
       ## VM Settings
       cpu_cores        => $cpu_cores,
       memory           => $memory,
-      swap             => $swap, 
+      swap             => $swap,
       protected        => $protected,
       unprivileged     => $unprivileged,
 
@@ -159,9 +158,9 @@ define proxmox::lxc (
       ipv4_static_cidr => $ipv4_static_cidr,
       ipv4_static_gw   => $ipv4_static_gw,
 #      ci_sshkey        => $ci_sshkey,
-      searchdomain     => $searchdomain, 
+      searchdomain     => $searchdomain,
       nameserver       => $nameserver,
-      
+
       ## Feature Settings
       fuse             => $fuse,
       mknod            => $mknod,
@@ -176,7 +175,7 @@ define proxmox::lxc (
     ### get lxc id from facts
     #################################################
     ## get lxc vmid as hash
-    $lxc_vmid_hash = $proxmox_qemu.map|$hash|{
+    $lxc_vmid_hash = $proxmox_qemu.map|$hash| {
       if $hash['name'] == $lxc_name {
         $hash['vmid']
       }
@@ -191,7 +190,6 @@ define proxmox::lxc (
     }
   }
 
-
   #################################################
   ### start / stop
   #################################################
@@ -205,30 +203,28 @@ define proxmox::lxc (
     }
   }
 
-
   #################################################
   ### custom script
   #################################################
   if ($custom_script) and ($lxc_create_new == true) {
     exec { 'run_custom_script':
       command => "${custom_script} ${newid} ${lxc_name} ${state} ${puppetserver_id} ${puppetserver_name} ${searchdomain} ${puppetversion},",
-      path    => ["/usr/bin","/usr/sbin", "/bin"],
+      path    => ['/usr/bin','/usr/sbin', '/bin'],
       timeout => 0,
     }
   }
-
 
   #################################################
   ### install puppet agent
   #################################################
   if ($install_puppet_agent) and ( $lxc_create_new == true) {
     proxmox::lxc::puppetagent { "$lxc_vmid":
-      lxc_id => $newid,
+      lxc_id            => $lxc_vmid,
       puppetserver_id   => $puppetserver_id,
-      puppetserver_name => "${puppetserver_name}",
+      puppetserver_name => $puppetserver_name,
       certname          => "${lxc_name}.${searchdomain}",
       puppetversion     => $puppetversion,
-     }
+    }
   }
 
 }

@@ -12,18 +12,18 @@
 define proxmox::lxc::puppetagent (
   ## Default Settings
   Integer[1] $lxc_id,
-  Optional[Integer] $puppetserver_id    = $proxmox::puppetserver_id,
-  Optional[String] $puppetserver_name   = $proxmox::puppetserver_name,
-  Optional[String] $puppetserver_binary = $proxmox::puppetserver_binary,
-  Optional[String] $puppetclient_binary = $proxmox::puppetclient_binary,
+  Integer $puppetserver_id    = $proxmox::puppetserver_id,
+  String $puppetserver_name   = $proxmox::puppetserver_name,
+  String $puppetserver_binary = $proxmox::puppetserver_binary,
+  String $puppetclient_binary = $proxmox::puppetclient_binary,
 
   Optional[String] $certname,
-  Optional[Integer] $puppetversion      = $proxmox::puppetversion,
+  Integer $puppetversion      = $proxmox::puppetversion,
 ) {
 
   ## defaults
   Exec {
-    path    => ["/usr/bin","/usr/sbin", "/bin"],
+    path    => ['/usr/bin','/usr/sbin', '/bin'],
   }
 
   exec { 'apt update':
@@ -79,11 +79,11 @@ define proxmox::lxc::puppetagent (
   if ($puppetserver_id != 0) and ($puppetserver_name != '') {
     ## necessary step on puppermaster
     exec { 'sign puppet agent':
-      command => "pct exec ${puppetserver_id} -- ${puppetserver_binary} ca sign --certname ${certname.downcase()}"
+      command => "pct exec ${puppetserver_id} -- ${puppetserver_binary} ca sign --certname ${certname.downcase()}",
     }
 
     exec { 'start puppet agent':
-      command => "pct exec ${puppetserver_id} -- systemctl start puppet"
+      command => "pct exec ${puppetserver_id} -- systemctl start puppet",
     }
 
 #    notify { "The next step can running for a long time! Timout disabled ...": }

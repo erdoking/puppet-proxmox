@@ -5,7 +5,6 @@
 # @example
 #   proxmox::lxc::create { 'namevar': }
 
-
 # Paramters:
 #   [*pmx_node*]          - The Proxmox node to create the lxc container on.
 #   [*os_template*]       - Name of LXC template 
@@ -43,26 +42,26 @@ define proxmox::lxc::create (
   String[1]           $os_template,
   Optional[String[1]] $lxc_name               = $title,
   Optional[Integer]   $newid                  = Integer($facts['proxmox_cluster_nextid']),
-  Optional[Enum['running', 'stopped']] $state = 'running',
+  Enum['running', 'stopped'] $state           = 'running',
 
   ## VM Settings
-  Optional[Integer] $cpu_cores                = 1,
-  Optional[Integer] $memory                   = 512,
-  Optional[Integer] $swap                     = 512,
-  Optional[Boolean] $protected                = false,
-  Optional[Boolean] $unprivileged             = true,    ## default of Proxmox
+  Integer $cpu_cores                          = 1,
+  Integer $memory                             = 512,
+  Integer $swap                               = 512,
+  Boolean $protected                          = false,
+  Boolean $unprivileged                       = true,    ## default of Proxmox
 
   ## Disk settings and Description
   # Optional[String]  $disk_size              = undef,
   Optional[Integer]  $disk_size               = undef,   ## Maybe switch back in the future
-  Optional[String]   $disk_target             = local,
+  String $disk_target                         = local,
   # Optional[String]  $description             = undef,
 
   ## Network Settings
-  Optional[String]  $net_name                 = 'eth0',
+  String $net_name                            = 'eth0',
   Optional[String]  $net_mac_addr             = undef,
   Optional[String]  $net_bridge               = undef,
-  Optional[Boolean] $ipv4_static              = false,
+  Boolean $ipv4_static                        = false,
   Optional[String]  $ipv4_static_cidr         = undef, # Needs to be in the format '192.168.1.20/24'
   Optional[String]  $ipv4_static_gw           = undef, # Needs to be in the format '192.168.1.1'
   # Optional[String]  $ci_sshkey               = '',  # Commented out; difficulties below.
@@ -70,29 +69,29 @@ define proxmox::lxc::create (
   Optional[String] $nameserver                = undef,
 
   ## Feature Settings
-  Optional[Boolean] $fuse                     = false,
-  Optional[Boolean] $mknod                    = false,
-  Optional[Boolean] $nfs                      = false,
-  Optional[Boolean] $cifs                     = false,
-  Optional[Boolean] $nesting                  = false,
-  Optional[Boolean] $keyctl                   = false,
+  Boolean $fuse                               = false,
+  Boolean $mknod                              = false,
+  Boolean $nfs                                = false,
+  Boolean $cifs                               = false,
+  Boolean $nesting                            = false,
+  Boolean $keyctl                             = false,
 ) {
-    
+
   # Get and parse the facts for VMs, Storage, and Nodes.
   $proxmox_qemu    = parsejson($facts['proxmox_qemu'])
   $proxmox_storage = parsejson($facts['proxmox_storage'])
   $proxmox_nodes   = parsejson($facts['proxmox_nodes'])
 
   # Generate a list of VMIDS
-  $vmids = $proxmox_qemu.map|$hash|{$hash['vmid']}
+  $vmids = $proxmox_qemu.map|$hash| { $hash['vmid'] }
   # Generate a list of VMIDS
-  $vmnames = $proxmox_qemu.map|$hash|{$hash['name']}
-  
+  $vmnames = $proxmox_qemu.map|$hash| { $hash['name'] }
+
   # Generate a list of all Proxmox Nodes
-  $nodes = $proxmox_qemu.map|$hash|{$hash['node']}
+  $nodes = $proxmox_qemu.map|$hash| { $hash['node'] }
 
   # Generate a list of all storage mediums on the specified node
-  $disk_targets = $proxmox_storage.map|$hash|{
+  $disk_targets = $proxmox_storage.map|$hash| {
     if $hash['node'] == $pmx_node {
       $hash['storage']
     }
@@ -110,136 +109,134 @@ define proxmox::lxc::create (
       # If the New ID is in the list, simply don't attempt to create/overwrite it.
       if ! ($newid in $vmids) {
 
-          ## comment: need to check - you can define it but not shown on webgui
-          #    # Evaluate if there's a Description string.
-          #    if ($description != undef) {
-          #      $if_description = "--description='${description}'"
-          #    }
+        ## comment: need to check - you can define it but not shown on webgui
+        #    # Evaluate if there's a Description string.
+        #    if ($description != undef) {
+        #      $if_description = "--description='${description}'"
+        #    }
 
-          # Evaluate if there's a Disk Target String.
-          if $disk_target {
-            if $disk_target in $disk_targets {
-              $if_disk_target = "--storage='${disk_target}'"
+        # Evaluate if there's a Disk Target String.
+        if $disk_target {
+          if $disk_target in $disk_targets {
+            $if_disk_target = "--storage='${disk_target}'"
+          } else {
+            fail('The disk target cannot be found.')
+          }
+        }
+
+        ## Set size of root fs
+        if $disk_size {
+          #if ! $disk_target {
+          #  fail('disk_target not set but is required to set disk_size.')
+          # } else {
+            ## Found with try-and-error! Maybe not working on later versions
+            $if_disk_size = "--rootfs=\"volume=${disk_target}:${disk_size}\""
+          # }
+        }
+
+        # Evaluate if the VM should be unprivileged
+        if ($unprivileged == true) {
+          $if_unprivileged = '--unprivileged 1'
+        }
+
+        # Evaluate if the VM should be protected
+        if ($protected == true) {
+          $if_protection = '--protection 1'
+        }
+
+        # Evaluate if searchdomain is defined
+        if $searchdomain {
+          $if_searchdomain = "--searchdomain ${searchdomain}"
+        }
+
+        # Evaluate if nameserver is defined
+        if $nameserver {
+          if (($nameserver =~ Stdlib::IP::Address::V4) == false) {
+            fail('Nameserver is in the wrong format or undefined. MUST be a valid IPv4 address')
+          }
+          # If the above checks pass, set the ip settings
+          $if_nameserver = "--nameserver ${nameserver}"
+        }
+
+        ## Evaluate the features
+        if ($fuse) or ($mknod) or ($nfs) or ($cifs) or ($nesting) {
+          if ($fuse == true) {
+            $if_fuse = ',fuse=1'
+          }
+          if ($mknod == true) {
+            $if_mknod = ',mknod=1'
+          }
+          if ($nesting == true) {
+            $if_nesting = ',nesting=1'
+          }
+          if ($keyctl == true) {
+            $if_keyctl = ',keyctl=1'
+          }
+          ## Evaluate mount-features
+          if ($nfs) or ($cifs) {
+            if ($nfs == true) and ($cifs == true) {
+              $if_mounts = ',mount="nfs;cifs"'
+            } elsif ($cifs == true) {
+              $if_mounts = ',mount="cifs"'
             } else {
-              fail('The disk target cannot be found.')
+              $if_mounts = ',mount="nfs"'
             }
           }
 
-          ## Set size of root fs
-          if $disk_size {
-           # if ! $disk_target {
-           #   fail('disk_target not set but is required to set disk_size.')
-           # } else {
-              ## Found with try-and-error! Maybe not working on later versions
-              $if_disk_size = "--rootfs=\"volume=${disk_target}:${disk_size}\""
-           # }
-          }
+          ## remove first character (,)
+          $features_string = "${if_fuse}${if_mknod}${if_nesting}${if_keyctl}${if_mounts}"
+          $features = regsubst("${features_string}", '^.(.*)$', '\1')
+          $if_features="--features=\"${features}\""
+        }
 
-          # Evaluate if the VM should be unprivileged
-          if ($unprivileged == true) {
-            $if_unprivileged = '--unprivileged 1'
-          }
+        # Check if there's a custom Cloud-Init SSH Key, and URI encodes it
+        # Commented out, having immense difficulty figuring out the correct string format.
+        # if ($ci_sshkey != '') {
+        #   $uriencodedsshkey = uriescape($ci_sshkey)
+        #   $if_cisshkey = "--sshkeys=${uriencodedsshkey}"
+        # }
 
-          # Evaluate if the VM should be protected
-          if ($protected == true) {
-            $if_protection = '--protection 1'
-          }
-
-          # Evaluate if searchdomain is defined
-          if $searchdomain {
-            $if_searchdomain = "--searchdomain ${searchdomain}"
-          }
-
-          # Evaluate if nameserver is defined
-          if $nameserver {
-            if (($nameserver =~ Stdlib::IP::Address::V4) == false) {
-              fail('Nameserver is in the wrong format or undefined. MUST be a valid IPv4 address')
+        if $net_name {
+          ## Check if there are custom network requirements
+          if $ipv4_static == true {
+            if (($ipv4_static_cidr =~ Stdlib::IP::Address::V4) == false) and ($ipv4_static_cidr != '') {
+              fail('IP address is in the wrong format or undefined.')
+            }
+            if (($ipv4_static_gw =~ Stdlib::IP::Address::V4) == false) and ($ipv4_static_gw != '') {
+              fail('Gateway address is in the wrong format or undefined.')
             }
             # If the above checks pass, set the ip settings
-            $if_nameserver = "--nameserver ${nameserver}"
+            $if_nondhcp = ",ip=${ipv4_static_cidr},gw=${ipv4_static_gw}"
+          } else {
+            $if_nondhcp = ',ip=dhcp'
           }
 
-          ## Evaluate the features
-          if ($fuse) or ($mknod) or ($nfs) or ($cifs) or ($nesting) {
-            if ($fuse == true) {
-              $if_fuse = ',fuse=1'
-            }
-            if ($mknod == true) {
-              $if_mknod = ',mknod=1'
-            }
-            if ($nesting == true) {
-              $if_nesting = ',nesting=1'
-            }
-            if ($keyctl == true) {
-              $if_keyctl = ',keyctl=1'
-            }
-            ## Evaluate mount-features
-            if ($nfs) or ($cifs) {
-              if ($nfs == true) and ($cifs == true) {
-                $if_mounts = ',mount="nfs;cifs"'
-              } elsif ($cifs == true) {
-                $if_mounts = ',mount="cifs"'
-              } else {
-                $if_mounts = ',mount="nfs"'
-              }
-            }
-
-            ## remove first character (,)
-            $features_string = "${if_fuse}${if_mknod}${if_nesting}${if_keyctl}${if_mounts}"
-            $features = regsubst("${features_string}", '^.(.*)$', '\1')
-            $if_features="--features=\"${features}\""
+          ## definde network brige and warn is not defined
+          if ! $net_bridge {
+            ## How to print real warning? warning() not working anymore
+            notify { 'WARN: Network bridge undefined.': }
+          } else {
+            $if_net_bridge = ",bridge=${net_bridge}"
           }
 
-
-          # Check if there's a custom Cloud-Init SSH Key, and URI encodes it
-          # Commented out, having immense difficulty figuring out the correct string format.
-          # if ($ci_sshkey != '') {
-          #   $uriencodedsshkey = uriescape($ci_sshkey)
-          #   $if_cisshkey = "--sshkeys=${uriencodedsshkey}"
-          # }
-
-
-          if $net_name {
-            ## Check if there are custom network requirements
-            if $ipv4_static == true {
-              if (($ipv4_static_cidr =~ Stdlib::IP::Address::V4) == false) and ($ipv4_static_cidr != '') {
-                fail('IP address is in the wrong format or undefined.')
-              }
-              if (($ipv4_static_gw =~ Stdlib::IP::Address::V4) == false) and ($ipv4_static_gw != '') {
-                fail('Gateway address is in the wrong format or undefined.')
-              }
-              # If the above checks pass, set the ip settings
-              $if_nondhcp = ",ip=${ipv4_static_cidr},gw=${ipv4_static_gw}"
+          ## mac address
+          if $net_mac_addr {
+            if (($net_mac_addr =~ /^([0-9a-fA-F]{2}\:){5}([0-9a-fA-F]{2})$/) == false) {
+              fail('MAC address is in the wrong format or undefined.')
             } else {
-              $if_nondhcp = ",ip=dhcp"
+              $if_net_mac_addr = ",hwaddr=${net_mac_addr}"
             }
-
-            ## definde network brige and warn is not defined
-            if ! $net_bridge {
-              ## How to print real warning? warning() not working anymore
-              notify { "WARN: Network bridge undefined.": }
-            } else {
-              $if_net_bridge = ",bridge=${net_bridge}"
-            }
-
-            ## mac address
-            if $net_mac_addr {
-              if (($net_mac_addr =~ /^([0-9a-fA-F]{2}\:){5}([0-9a-fA-F]{2})$/) == false) {
-                fail('MAC address is in the wrong format or undefined.')
-              } else {
-                $if_net_mac_addr = ",hwaddr=${net_mac_addr}" 
-              }
-            }
-
-            ## set network config
-            $if_net_config = "--net0=\'name=${net_name}${if_nondhcp}${if_net_bridge}${if_net_mac_addr}\'"
           }
 
-          # Create the VM
-          exec{"create_${newid}":
-            command => "/usr/bin/pvesh create /nodes/${pmx_node}/lxc --vmid=${newid} --ostemplate local:vztmpl/${os_template}\
-            --hostname=${lxc_name} ${if_disk_target} --cores=${cpu_cores} --memory=${memory} --swap=${swap} ${if_protection} ${if_unprivileged} ${if_net_config} ${if_features} ${if_disk_size} ${if_searchdomain} ${if_nameserver}",
-          }
+          ## set network config
+          $if_net_config = "--net0=\'name=${net_name}${if_nondhcp}${if_net_bridge}${if_net_mac_addr}\'"
+        }
+
+        # Create the VM
+        exec { "create_${newid}":
+          command => "/usr/bin/pvesh create /nodes/${pmx_node}/lxc --vmid=${newid} --ostemplate local:vztmpl/${os_template}\
+          --hostname=${lxc_name} ${if_disk_target} --cores=${cpu_cores} --memory=${memory} --swap=${swap} ${if_protection} ${if_unprivileged} ${if_net_config} ${if_features} ${if_disk_size} ${if_searchdomain} ${if_nameserver}",
+        }
       }
     }
   }

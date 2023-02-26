@@ -5,12 +5,13 @@
 # @example
 #   proxmox::lxc::startstop { 'namevar': }
 define proxmox::lxc::startstop (
-  $lxc_name                                   = $title,
-  Optional[Integer] $lxc_vmid,
+  String $lxc_name                   = $title,
   String[1] $pmx_node,
-  Optional[Enum['running', 'stopped']] $state = 'running',
-  Integer $boot_wait_time                     = 10,
-  Optional[String] $pvesh_path                = $proxmox::pvesh_path,
+  Integer $boot_wait_time            = 10,
+  Enum['running', 'stopped'] $state = 'running',
+  String $pvesh_path                 = $proxmox::pvesh_path,
+
+  Optional[Integer] $lxc_vmid,
 ) {
 
   # The base class must be included first because it is used by parameter defaults
@@ -24,9 +25,9 @@ define proxmox::lxc::startstop (
     ## Evaluation Error: Error while evaluating a Resource Statement, Evaluation Error: Cannot reassign variable '$lxc_vmid
     $vmid = $lxc_vmid
   } else {
-  
+
     ## get lxc vmid as hash
-    $lxc_vmid_hash = $proxmox_qemu.map|$hash|{
+    $lxc_vmid_hash = $proxmox_qemu.map|$hash| {
       if $hash['name'] == $lxc_name {
         $hash['vmid']
       }
@@ -42,7 +43,7 @@ define proxmox::lxc::startstop (
   }
 
   ## get vm state
-  $vm_status = $proxmox_qemu.map|$hash|{
+  $vm_status = $proxmox_qemu.map|$hash| {
     if $hash['vmid'] == $vmid {
       $hash['status']
     }
@@ -52,20 +53,20 @@ define proxmox::lxc::startstop (
   if ! ($state in $vm_status) {
 
     if ( $state == 'running' ) {
-       $set_state = 'start'
+      $set_state = 'start'
     } else {
       $set_state = 'shutdown'
-    } 
+    }
 
-    ## start/stop lxc 
-    exec{"make sure ${lxc_name}[${vmid}] is ${state}":
+    ## start/stop lxc
+    exec {"make sure ${lxc_name}[${vmid}] is ${state}":
       command => "${pvesh_path} create /nodes/${pmx_node}/lxc/${vmid}/status/${set_state}",
     }
 
     ## wait some seconds for booting up
-    exec { "wait ${boot_wait_time} seconds for ${lxc_name}[${vmid}] to $set_state":
+    exec { "wait ${boot_wait_time} seconds for ${lxc_name}[${vmid}] to ${set_state}":
       command => "sleep ${boot_wait_time}",
-      path    => ["/usr/bin", "/usr/sbin", "/bin"],
+      path    => ['/usr/bin', '/usr/sbin', '/bin'],
     }
   }
 }
