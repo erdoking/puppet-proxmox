@@ -83,7 +83,7 @@ define proxmox::lxc::puppetagent (
     }
 
     exec { 'start puppet agent':
-      command => "pct exec ${puppetserver_id} -- systemctl start puppet",
+      command => "pct exec ${lxc_id} -- systemctl start puppet",
     }
 
 #    notify { "The next step can running for a long time! Timout disabled ...": }
