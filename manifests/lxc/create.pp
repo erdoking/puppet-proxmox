@@ -16,6 +16,7 @@
 #   [*swap*]              - OPTIONAL: The amount of swap to be assigned to the new VM, in Megabytes (2GB = 2048).
 #   [*protected*]         - OPTIONAL: If true, it will protect the new VM from accidental deletion.
 #   [*unprivileged*]      - OPTIONAL: If true, the new container is unprivileged (security feature).
+#   [*onboot*]            - OPTIONAL: Boolean. Specifies whether a container will be started during system bootup.
 #
 #   [*disk_size*]         - OPTIONAL: The size of the new VM disk. If undefined, the default value of 4GB is used.
 #   [*disk_target]        - OPTIONAL: The storage location for the new VM disk. If undefined, will default to the Templates volume.
@@ -50,6 +51,7 @@ define proxmox::lxc::create (
   Integer $swap                               = 512,
   Boolean $protected                          = false,
   Boolean $unprivileged                       = true,    ## default of Proxmox
+  Boolean $onboot                             = false,
 
   ## Disk settings and Description
   # Optional[String]  $disk_size              = undef,
@@ -144,6 +146,11 @@ define proxmox::lxc::create (
           $if_protection = '--protection 1'
         }
 
+        # Evaluate if the VM should be autostart on boot
+        if ($onboot == true) {
+          $if_onboot = '--onboot 1'
+        }
+
         # Evaluate if searchdomain is defined
         if $searchdomain {
           $if_searchdomain = "--searchdomain ${searchdomain}"
@@ -235,7 +242,8 @@ define proxmox::lxc::create (
         # Create the VM
         exec { "create_${newid}":
           command => "/usr/bin/pvesh create /nodes/${pmx_node}/lxc --vmid=${newid} --ostemplate local:vztmpl/${os_template}\
-          --hostname=${lxc_name} ${if_disk_target} --cores=${cpu_cores} --memory=${memory} --swap=${swap} ${if_protection} ${if_unprivileged} ${if_net_config} ${if_features} ${if_disk_size} ${if_searchdomain} ${if_nameserver}",
+          --hostname=${lxc_name} ${if_disk_target} --cores=${cpu_cores} --memory=${memory} --swap=${swap} ${if_protection} ${if_unprivileged} ${$if_onboot} ${if_net_config} ${if_features} ${if_disk_size} ${if_searchdomain} ${if_nameserver
+}",
         }
       }
     }
