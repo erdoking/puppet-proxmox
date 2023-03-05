@@ -9,18 +9,18 @@
 #    searchdomain => 'example.com',
 #    memory       => 1024,
 #    cpu_cores    => 2,
-#  }   
+#  }
 #
 # Paramters:
 # @param pmx_node
 #   The Proxmox node to create the lxc container on.
 #
 # @param os_template
-#   Name of LXC template 
-# 
+#   Name of LXC template
+#
 # @param lxc_name
 #   OPTIONAL: The name of the new VM. (default: $title)
-#   
+#
 # @param newid
 #   OPTIONAL: The ID for the new Virtual Machine. If unassigned, the next available ID will be used.
 #
@@ -28,7 +28,7 @@
 #   LXC container status
 #
 # @param cpu_cores
-#   The number of cores assigned to the container. 
+#   The number of cores assigned to the container.
 #
 # @param memory
 #   Amount of memory to be assigned to the new VM, in Megabytes (2GB = 2048).
@@ -52,7 +52,7 @@
 #   OPTIONAL: The storage location for the new VM disk. If undefined, will default to the Templates volume.
 #
 # #param description
-# #  OPTIONAL: - Currently disabled 
+# #  OPTIONAL: - Currently disabled
 #
 # @param net_name
 #   OPTIONAL: Name of network interface
@@ -91,10 +91,10 @@
 #   OPTIONAL: Boolean. If true, feature "cifs" is defined
 #
 # @param nesting
-#   OPTIONAL: Boolean. If true, feature "nesting" is defined 
+#   OPTIONAL: Boolean. If true, feature "nesting" is defined
 #
 # @param keyctl
-#   OPTIONAL: Boolean. If true, feature "keyctl" is defined 
+#   OPTIONAL: Boolean. If true, feature "keyctl" is defined
 #
 # @param puppetserver_id
 #   OPTIONAL: lxc id of puppet master
@@ -109,7 +109,7 @@
 #   OPTIONAL: Boolean. If true, puppet agent will be installed automatic
 #
 # @param boot_wait_time
-#   
+#
 define proxmox::lxc (
 
   ## Default Settings
