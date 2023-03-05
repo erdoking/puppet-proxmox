@@ -8,7 +8,7 @@ define proxmox::lxc::startstop (
   String $lxc_name                   = $title,
   String[1] $pmx_node,
   Integer $boot_wait_time            = 10,
-  Enum['running', 'stopped'] $state = 'running',
+  Enum['running', 'stopped'] $ensure = 'running',
   String $pvesh_path                 = $proxmox::pvesh_path,
 
   Optional[Integer] $lxc_vmid,
@@ -50,16 +50,16 @@ define proxmox::lxc::startstop (
   }
 
   ## if $lxc_vmid not allready in state ...
-  if ! ($state in $vm_status) {
+  if ! ($ensure in $vm_status) {
 
-    if ( $state == 'running' ) {
+    if ( $ensure == 'running' ) {
       $set_state = 'start'
     } else {
       $set_state = 'shutdown'
     }
 
     ## start/stop lxc
-    exec {"make sure ${lxc_name}[${vmid}] is ${state}":
+    exec {"make sure ${lxc_name}[${vmid}] is ${ensure}":
       command => "${pvesh_path} create /nodes/${pmx_node}/lxc/${vmid}/status/${set_state}",
     }
 

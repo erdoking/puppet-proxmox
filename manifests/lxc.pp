@@ -45,7 +45,7 @@ define proxmox::lxc (
   String[1] $os_template,
   String[1] $lxc_name                 = $title,
   Integer $newid                      = Integer($facts['proxmox_cluster_nextid']),
-  Enum['running', 'stopped'] $state   = 'running',
+  Enum['running', 'stopped'] $ensure  = 'running',
 
   ## VM Settings
   Integer $cpu_cores                  = 1,
@@ -196,7 +196,7 @@ define proxmox::lxc (
     ## ensure state
     proxmox::lxc::startstop { $lxc_name:
       pmx_node       => $pmx_node,
-      state          => $state,
+      ensure         => $ensure,
       boot_wait_time => $boot_wait_time,
       lxc_vmid       => $lxc_vmid,
     }
@@ -207,7 +207,7 @@ define proxmox::lxc (
   #################################################
   if ($custom_script) and ($lxc_create_new == true) {
     exec { 'run_custom_script':
-      command => "${custom_script} ${newid} ${lxc_name} ${state} ${puppetserver_id} ${puppetserver_name} ${searchdomain} ${puppetversion},",
+      command => "${custom_script} ${newid} ${lxc_name} ${ensure} ${puppetserver_id} ${puppetserver_name} ${searchdomain} ${puppetversion},",
       path    => ['/usr/bin','/usr/sbin', '/bin'],
       timeout => 0,
     }
