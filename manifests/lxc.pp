@@ -136,7 +136,6 @@ define proxmox::lxc (
       os_template      => $os_template,
       lxc_name         => $lxc_name,
       newid            => $newid,
-      state            => $state,
 
       ## VM Settings
       cpu_cores        => $cpu_cores,

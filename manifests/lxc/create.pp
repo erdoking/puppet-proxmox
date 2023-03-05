@@ -43,7 +43,6 @@ define proxmox::lxc::create (
   String[1]           $os_template,
   Optional[String[1]] $lxc_name               = $title,
   Optional[Integer]   $newid                  = Integer($facts['proxmox_cluster_nextid']),
-  Enum['running', 'stopped'] $state           = 'running',
 
   ## VM Settings
   Integer $cpu_cores                          = 1,
