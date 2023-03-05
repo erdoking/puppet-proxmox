@@ -1,43 +1,115 @@
-# @summary A short summary of the purpose of this defined type.
+# @summary Allows specialised configurations for lxc container
 #
-# A description of what this defined type does
+# A description of what this defined type doesdd
 #
 # @example
+#   proxmox::lxc {'myserver':
+#    net_mac_addr => 'AA:BB:CC:EE:FF:11',
+#    net_bridge   => 'vmbr1',
+#    searchdomain => 'example.com',
+#    memory       => 1024,
+#    cpu_cores    => 2,
+#  }   
+#
 # Paramters:
-#   [*pmx_node*]          - The Proxmox node to create the lxc container on.
-#   [*os_template*]       - Name of LXC template 
-#   [*lxc_name*]           - OPTIONAL: The name of the new VM. (default: $title)
-#   [*newid*]             - OPTIONAL: The ID for the new Virtual Machine. If unassigned, the next available ID will be used.
+# @param pmx_node
+#   The Proxmox node to create the lxc container on.
 #
-#   [*cpu_cores*]         - OPTIONAL: The number of CPU cores to be assigned to the new VM.
-#   [*memory*]            - OPTIONAL: The amount of memory to be assigned to the new VM, in Megabytes (2GB = 2048).
-#   [*swap*]              - OPTIONAL: The amount of swap to be assigned to the new VM, in Megabytes (2GB = 2048).
-#   [*protected*]         - OPTIONAL: If true, it will protect the new VM from accidental deletion.
-#   [*unprivileged*]      - OPTIONAL: If true, the new container is unprivileged (security feature).
+# @param os_template
+#   Name of LXC template 
+# 
+# @param lxc_name
+#   OPTIONAL: The name of the new VM. (default: $title)
+#   
+# @param newid
+#   OPTIONAL: The ID for the new Virtual Machine. If unassigned, the next available ID will be used.
 #
-#   [*disk_size*]         - OPTIONAL: The size of the new VM disk. If undefined, the default value of 4GB is used.
-#   [*disk_target]        - OPTIONAL: The storage location for the new VM disk. If undefined, will default to the Templates volume.
-#   [*description*]       - OPTIONAL: - Currently disabled 
+# @param ensure
+#   LXC container status
 #
-#   [*net_name*]          - OPTIONAL: Name of network interface
-#   [*net_mac_addr*]      - OPTIONAL: Mac address of network interface
-#   [*net_bridge*]        - OPTIONAL: Name of network bridge
-#   [*ipv4_static]        - Boolean. If true, you must define the CIDR and Gateway values.
-#   [*ipv4_static_cidr*]  - OPTIONAL: If ipv4_static is true, this value must be in the format '192.168.1.20/24'.
-#   [*ipv4_static_gw*]    - OPTIONAL: If ipv4_static is true, this value must be in the format '192.168.1.1'.
+# @param cpu_cores
+#   The number of cores assigned to the container. 
 #
-#   [*fuse*]              - OPTIONAL: Boolean. If true, feature "fuse" is defined
-#   [*mknod*]             - OPTIONAL: Boolean. If true, feature "mknod" is defined
-#   [*nfs*]               - OPTIONAL: Boolean. If true, feature "nfs" is defined
-#   [*cifs*]              - OPTIONAL: Boolean. If true, feature "cifs" is defined
-#   [*nesting*]           - OPTIONAL: Boolean. If true, feature "nesting" is defined 
-#   [*keyctl*]            - OPTIONAL: Boolean. If true, feature "keyctl" is defined 
+# @param memory
+#   Amount of memory to be assigned to the new VM, in Megabytes (2GB = 2048).
 #
-#   [*puppetserver_id*]      - OPTIONAL: lxc id of puppet master
-#   [*puppetserver_name*]    - OPTIONAL: Name of Puppetserver
-#   [*puppetversion*]        - OPTIONAL: version of puppet
-#   [*install_puppet_agent*] - OPTIONAL: Boolean. If true, puppet agent will be installed automatic
+# @param swap
+#   OPTIONAL: The amount of swap to be assigned to the new VM, in Megabytes (2GB = 2048).
 #
+# @param protected
+#   OPTIONAL: If true, it will protect the new VM from accidental deletion.
+#
+# @param unprivileged
+#   Sets the protection flag of the container. This will prevent the CT or CT's disk remove/update operation.
+#
+# @param onboot
+#   Specifies whether a container will be started during system bootup.
+#
+# @param disk_size
+#   OPTIONAL: The size of the new VM disk. If undefined, the default value of 4GB is used.
+#
+# @param disk_target
+#   OPTIONAL: The storage location for the new VM disk. If undefined, will default to the Templates volume.
+#
+# #param description
+# #  OPTIONAL: - Currently disabled 
+#
+# @param net_name
+#   OPTIONAL: Name of network interface
+#
+# @param net_mac_addr
+#   OPTIONAL: Mac address of network interface
+#
+# @param net_bridge
+#   OPTIONAL: Name of network bridge
+#
+# @param ipv4_static
+#   Boolean. If true, you must define the CIDR and Gateway values.
+#
+# @param ipv4_static_cidr
+#   OPTIONAL: If ipv4_static is true, this value must be in the format '192.168.1.20/24'.
+#
+# @param ipv4_static_gw
+#   OPTIONAL: If ipv4_static is true, this value must be in the format '192.168.1.1'.
+#
+# @param searchdomain
+#   Sets DNS search domains for a container. Create will automatically use the setting from the host if you neither set searchdomain nor nameserver.
+#
+# @param nameserver
+#   Sets DNS server IP address for a container. Create will automatically use the setting from the host if you neither set searchdomain nor nameserver.
+#
+# @param fuse
+#   OPTIONAL: Boolean. If true, feature "fuse" is defined
+#
+# @param mknod
+#   OPTIONAL: Boolean. If true, feature "mknod" is defined
+#
+# @param nfs
+#   OPTIONAL: Boolean. If true, feature "nfs" is defined
+#
+# @param cifs
+#   OPTIONAL: Boolean. If true, feature "cifs" is defined
+#
+# @param nesting
+#   OPTIONAL: Boolean. If true, feature "nesting" is defined 
+#
+# @param keyctl
+#   OPTIONAL: Boolean. If true, feature "keyctl" is defined 
+#
+# @param puppetserver_id
+#   OPTIONAL: lxc id of puppet master
+#
+# @param puppetserver_name
+#   OPTIONAL: Name of Puppetserver
+#
+# @param puppetversion
+#   OPTIONAL: version of puppet
+#
+# @param install_puppet_agent
+#   OPTIONAL: Boolean. If true, puppet agent will be installed automatic
+#
+# @param boot_wait_time
+#   
 define proxmox::lxc (
 
   ## Default Settings
