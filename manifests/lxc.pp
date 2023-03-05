@@ -53,6 +53,7 @@ define proxmox::lxc (
   Integer $swap                       = 512,
   Boolean $protected                  = false,
   Boolean $unprivileged               = true,    ## default of Proxmox
+  Boolean $onboot                     = false,
 
   ## Disk settings and Description
   # Optional[String]  $disk_size      = undef,
@@ -143,6 +144,7 @@ define proxmox::lxc (
       swap             => $swap,
       protected        => $protected,
       unprivileged     => $unprivileged,
+      onboot           => $onboot,
 
       ## Disk settings and Description
       disk_size        => $disk_size,
