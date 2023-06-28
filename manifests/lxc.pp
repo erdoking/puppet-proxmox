@@ -165,12 +165,10 @@ define proxmox::lxc (
   Integer $boot_wait_time             = 10
 ) {
 
-#  if ( defined(Proxmox::Lxc::Startstop["$newid"]) ) {
   if ( defined(Proxmox::Lxc::Puppetagent["$newid"]) ) {
       warning("$newid allready in use. Create $lxc_name on next puppet run.")
   } else {
 
-  $lxcid_lastrun = $newid
 
   # The base class must be included first because it is used by parameter defaults
   if ! defined(Class['proxmox']) {
