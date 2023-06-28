@@ -165,6 +165,13 @@ define proxmox::lxc (
   Integer $boot_wait_time             = 10
 ) {
 
+#  if ( defined(Proxmox::Lxc::Startstop["$newid"]) ) {
+  if ( defined(Proxmox::Lxc::Puppetagent["$newid"]) ) {
+      warning("$newid allready in use. Create $lxc_name on next puppet run.")
+  } else {
+
+  $lxcid_lastrun = $newid
+
   # The base class must be included first because it is used by parameter defaults
   if ! defined(Class['proxmox']) {
     fail('You must include the proxmox base class before using any proxmox defined resources')
@@ -199,6 +206,11 @@ define proxmox::lxc (
   # Evaluate variables to make sure we're safe to continue.
   # Confirm that the Clone ID is not the same as the New ID.
   if ! ($lxc_name in $vmnames) {
+  
+
+    if ( $install_puppet_agent or $custom_script ) and ( $ensure == "stopped") {
+      warning("Unable to config new vm after creating because of status: $ensure. Skipping ...")
+    } else {
 
     ## marker
     $lxc_create_new = true
@@ -242,6 +254,7 @@ define proxmox::lxc (
       nesting          => $nesting,
       keyctl           => $keyctl,
     }
+    }
   } else {
 
     #################################################
@@ -266,7 +279,7 @@ define proxmox::lxc (
   #################################################
   ### start / stop
   #################################################
-  if ($lxc_name in $vmnames) or ( $lxc_create_new == true) {
+  if ($lxc_name in $vmnames) or ($lxc_create_new == true) {
     ## ensure state
     proxmox::lxc::startstop { $lxc_name:
       pmx_node       => $pmx_node,
@@ -300,4 +313,5 @@ define proxmox::lxc (
     }
   }
 
+  }
 }
