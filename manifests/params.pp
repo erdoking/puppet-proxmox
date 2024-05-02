@@ -8,7 +8,7 @@ class proxmox::params {
   ## puppet
   $puppetversion = 7
   $puppetserver_binary = '/opt/puppetlabs/server/bin/puppetserver'
-  $puppetclient_binary = '/opt/puppetlabs/bin/puppet'
+  $puppetclient_binary = 'puppet'
 
   ## path
   $pvesh_path = '/usr/bin/pvesh'

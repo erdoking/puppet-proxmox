@@ -36,14 +36,14 @@ define proxmox::lxc::puppetagent (
     command => "pct exec ${lxc_id} -- apt install wget lsb-release -y",
   }
 
-  exec { 'download puppet':
-    ## eg: wget -O /tmp/puppet7-release-buster.deb https://apt.puppet.com/puppet7-release-buster.deb 
-    command => "pct exec ${lxc_id} -- bash -c 'wget -O /tmp/puppet${puppetversion}-release-`lsb_release -cs`.deb https://apt.puppet.com/puppet${puppetversion}-release-`lsb_release -cs`.deb'",
-  }
-
-  exec { 'install puppet':
-    command => "pct exec ${lxc_id} -- bash -c 'dpkg -i /tmp/puppet${puppetversion}-release-`lsb_release -cs`.deb'",
-  }
+#  exec { 'download puppet':
+#    ## eg: wget -O /tmp/puppet7-release-buster.deb https://apt.puppet.com/puppet7-release-buster.deb 
+#    command => "pct exec ${lxc_id} -- bash -c 'wget -O /tmp/puppet${puppetversion}-release-`lsb_release -cs`.deb https://apt.puppet.com/puppet${puppetversion}-release-`lsb_release -cs`.deb'",
+#  }
+#
+#  exec { 'install puppet':
+#    command => "pct exec ${lxc_id} -- bash -c 'dpkg -i /tmp/puppet${puppetversion}-release-`lsb_release -cs`.deb'",
+#  }
 
   exec { 'apt update 2':
     command => "pct exec ${lxc_id} -- apt update",
